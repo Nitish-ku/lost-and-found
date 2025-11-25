@@ -5,11 +5,7 @@
   "type": "module",
   "main": "index.js",
   "engines": {
-<<<<<<< HEAD
-    "node": "20.x"
-=======
     "node": "22.x"
->>>>>>> 0841a73
   },
   "scripts": {
     "start": "node index.js",
