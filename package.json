@@ -1,0 +1,8 @@
+{
+  "name": "lost-and-found",
+  "version": "1.0.0",
+  "workspaces": [
+    "Frontend",
+    "Backend"
+  ]
+}
