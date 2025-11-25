@@ -70,8 +70,10 @@ app.post("/item",upload.single("file"), async (req,res)=>{
       phoneno: req.body.phoneno,
       title: req.body.title,
       description: req.body.description,
-      image: req.file.filename,
     };
+    if(req.file){
+      newItem.image = req.file.filename;
+    }
    const item=await Item.create(newItem);
    return res.status(200).send(item);
 
