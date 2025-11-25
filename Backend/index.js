@@ -6,28 +6,62 @@ import { Item } from "./models/itemmodel.js";
 import cors from "cors";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);//to require require for multer
+import { createClient } from '@supabase/supabase-js';
+import { Readable } from 'stream';
 
 
 const app = express();
 app.use(express.json());
 app.use(cors());
-app.use('/files',express.static("files"))
+// app.use('/files',express.static("files")) // No longer needed, serving from Supabase
+
+//================================================== Supabase Client ==============================================
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 //================================================== multer ==============================================
 
 const multer = require("multer");
 
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "./files");
+// Custom Multer storage for Supabase
+const supabaseStorage = multer.diskStorage({
+  _handleFile: async function (req, file, cb) {
+    try {
+      const uniqueSuffix = Date.now();
+      const filename = uniqueSuffix + '-' + file.originalname;
+      const { data, error } = await supabase.storage
+        .from('item-images') // Your bucket name
+        .upload(filename, file.stream, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: file.mimetype,
+        });
+
+      if (error) {
+        return cb(error);
+      }
+
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('item-images')
+        .getPublicUrl(filename);
+
+      cb(null, {
+        path: publicUrlData.publicUrl,
+        filename: filename,
+      });
+    } catch (error) {
+      cb(error);
+    }
   },
-  filename: function (req, file, cb) {
-    const uniqueSuffix = Date.now();
-    cb(null,uniqueSuffix+file.originalname);
+  _removeFile: function (req, file, cb) {
+    // Optional: Implement logic to remove file from Supabase if needed
+    cb(null);
   },
 });
 
-const upload = multer({ storage: storage });
+const upload = multer({ storage: supabaseStorage });
 
 
 app.get("/", (req, res) => {
@@ -72,7 +106,7 @@ app.post("/item",upload.single("file"), async (req,res)=>{
       description: req.body.description,
     };
     if(req.file){
-      newItem.image = req.file.filename;
+      newItem.image = req.file.path; // Save the public URL from Supabase
     }
    const item=await Item.create(newItem);
    return res.status(200).send(item);
