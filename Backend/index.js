@@ -95,38 +95,51 @@ app.get("/item", async (req, res) => {
 
 // ===============================post===================================
 
-app.post("/item",upload.single("file"), async (req,res)=>{
-  console.log(req.file);
-  try {
-    if (
-      !req.body.name ||
-      !req.body.email ||
-      !req.body.phoneno ||
-      !req.body.title ||
-      !req.body.description
-    ) {
-      return res.status(400).send({ message: "all fields sent" });
+app.post("/item", (req, res) => {
+  upload.single("file")(req, res, async (err) => {
+    if (err instanceof multer.MulterError) {
+      // A Multer error occurred when uploading.
+      console.error("Multer error:", err);
+      return res.status(400).send({ message: `Multer error: ${err.message}` });
+    } else if (err) {
+      // An unknown error occurred when uploading.
+      console.error("Unknown upload error:", err);
+      return res.status(500).send({ message: `Unknown upload error: ${err.message}` });
     }
 
-   const newItem = {
-      name: req.body.name,
-      email: req.body.email,
-      phoneno: req.body.phoneno,
-      title: req.body.title,
-      description: req.body.description,
-    };
-    if(req.file){
-      newItem.image = req.file.path; // Save the public URL from Supabase
+    console.log("req.file:", req.file);
+    console.log("req.body:", req.body);
+
+    try {
+      if (
+        !req.body.name ||
+        !req.body.email ||
+        !req.body.phoneno ||
+        !req.body.title ||
+        !req.body.description
+      ) {
+        return res.status(400).send({ message: "All required fields are not sent" });
+      }
+
+      const newItem = {
+        name: req.body.name,
+        email: req.body.email,
+        phoneno: req.body.phoneno,
+        title: req.body.title,
+        description: req.body.description,
+      };
+      if (req.file) {
+        newItem.image = req.file.path; // Save the public URL from Supabase
+      }
+      const item = await Item.create(newItem);
+      return res.status(200).send(item);
+
+    } catch (error) {
+      console.error("Database or processing error:", error);
+      res.status(500).send({ message: error.message });
     }
-   const item=await Item.create(newItem);
-   return res.status(200).send(item);
-
-  }catch(error){
-    console.log(error);
-    res.status(500).send({ message: error.message });
-  }
-
-})
+  });
+});
 
 
 // =================================-get id ==================================
