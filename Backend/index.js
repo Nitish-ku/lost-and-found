@@ -25,40 +25,50 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 const multer = require("multer");
 
 // Custom Multer storage for Supabase
-const supabaseStorage = multer.diskStorage({
-  _handleFile: async function (req, file, cb) {
-    try {
-      const uniqueSuffix = Date.now();
-      const filename = uniqueSuffix + '-' + file.originalname;
-      const { data, error } = await supabase.storage
-        .from('item-images') // Your bucket name
-        .upload(filename, file.stream, {
-          cacheControl: '3600',
-          upsert: false,
-          contentType: file.mimetype,
-        });
+class SupabaseStorage {
+  constructor(options) {
+    this.supabase = options.supabase;
+    this.bucketName = options.bucketName;
+  }
 
-      if (error) {
-        return cb(error);
-      }
+  _handleFile(req, file, cb) {
+    const uniqueSuffix = Date.now();
+    const filename = uniqueSuffix + '-' + file.originalname;
 
-      // Get public URL
-      const { data: publicUrlData } = supabase.storage
-        .from('item-images')
-        .getPublicUrl(filename);
-
-      cb(null, {
-        path: publicUrlData.publicUrl,
-        filename: filename,
+    const uploadStream = this.supabase.storage
+      .from(this.bucketName)
+      .upload(filename, file.stream, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.mimetype,
       });
-    } catch (error) {
-      cb(error);
-    }
-  },
-  _removeFile: function (req, file, cb) {
+
+    uploadStream
+      .then(({ data, error }) => {
+        if (error) {
+          return cb(error);
+        }
+        const { data: publicUrlData } = this.supabase.storage
+          .from(this.bucketName)
+          .getPublicUrl(filename);
+
+        cb(null, {
+          path: publicUrlData.publicUrl,
+          filename: filename,
+        });
+      })
+      .catch(cb);
+  }
+
+  _removeFile(req, file, cb) {
     // Optional: Implement logic to remove file from Supabase if needed
     cb(null);
-  },
+  }
+}
+
+const supabaseStorage = new SupabaseStorage({
+  supabase: supabase,
+  bucketName: 'item-images', // Your bucket name
 });
 
 const upload = multer({ storage: supabaseStorage });
