@@ -30,22 +30,30 @@ function Details() {
       .then((res) => {
         setItem(res.data);
         console.log(res.data);
+        // Set the image directly from the item data or use placeholder
+        if (res.data.image) {
+          setImage(res.data.image);
+        } else {
+          setImage(noimg);
+        }
         setLoading(false);
       })
       .catch((error) => {
         console.log(error);
         setLoading(false);
+        setImage(noimg); // Set placeholder on error as well
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [id]); // Added 'id' to dependency array for correctness
 
-  axios.get(`${api}/files/${item.image}`).then((res) => {
-    console.log(res);
-    setImage(`${api}/files/${item.image}`)
-  }).catch((error) => {
-        console.log(error);
-      setImage(noimg);
-    });
+  // Removed the problematic axios.get for image here
+  // axios.get(`${api}/files/${item.image}`).then((res) => {
+  //   console.log(res);
+  //   setImage(`${api}/files/${item.image}`)
+  // }).catch((error) => {
+  //       console.log(error);
+  //     setImage(noimg);
+  //   });
 
   return (
     <main id="detailspage">
