@@ -7,16 +7,12 @@ import axios from "axios";
 export default function Itemcard(props) {
   const [image, setImage] = useState(noImage);
   useEffect(() => {
-    axios
-      .get(`${api}/files/${props.image}`)
-      .then((res) => {
-        setImage(`${api}/files/${props.image}`);
-      })
-      .catch((error) => {
-        setImage(noImage);
-      });
-
-
+    // Directly use props.image if available, otherwise use noImage placeholder
+    if (props.image) {
+      setImage(props.image);
+    } else {
+      setImage(noImage);
+    }
   },[props.image]);
 
 
