@@ -7,7 +7,7 @@ function About(){
         </p>
         <footer>
             <p>Copyright &copy; 2025</p>
-            <p>Designed and Built by Nitish Kumar</p>
+            <p>Designed and Built by Good Hands</p>
         </footer>
       </section>
       
