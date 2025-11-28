@@ -93,7 +93,7 @@ export default function Post() {
             <div className="input-container">
               <input
                 type="file"
-                accept="images/*"
+                accept="image/*"
                 onChange={(e) => setFile(e.target.files[0])}
                 name="file"
               />
